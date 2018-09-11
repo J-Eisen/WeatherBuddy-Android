@@ -1,19 +1,19 @@
-package com.example.jonaheisenstock.weatherbuddy;
+package com.example.jonaheisenstock.weatherbuddy.DataClasses;
 
 import android.content.Context;
+import android.support.annotation.VisibleForTesting;
 
 /**
  * Created by jonaheisenstock on 2/11/18.
  */
 
-public class BuddyInfo extends UserInfo {
-    String[] itemNames = {"Umbrella", "Rain Boots", "Snow Boots", "Light Coat", "Heavy Coat", "Sunglasses"};
+public class BuddyInfo {
+    public String[] itemNames = {"Umbrella", "Rain Boots", "Snow Boots", "Light Coat", "Heavy Coat", "Sunglasses"};
     Context context;
-    UserInfo userInfo = new UserInfo();
+    public UserInfo userInfo = new UserInfo();
 
-    private enum TemperatureScale {FAHRENHEIT, CELSIUS, KELVIN};
-    private enum MeasurementSystem {IMPERIAL, METRIC};
-
+    public enum TemperatureScale {FAHRENHEIT, CELSIUS, KELVIN}
+    public enum MeasurementSystem {IMPERIAL, METRIC}
 
     // Item List
     // Shorts:      0
@@ -24,26 +24,30 @@ public class BuddyInfo extends UserInfo {
     // Umbrella:    5
     // WTF:         6
     public boolean[] items = {false, false, false, false, false, false, false};
-    private String[] names = {"Shorts", "Light Coat", "Heavy Coat", "Rain Boots", "Snow Boots", "Umbrella", "WTF"};
+    public String[] names = {"Shorts", "Light Coat", "Heavy Coat", "Rain Boots", "Snow Boots", "Umbrella", "WTF"};
     // data List
     // highTemp: 0
     // lowTemp:  1
     // rain:     2
     // snow:     3
     // precip:   4
-    private float[] dataEnglish = new float[5];
-    private int[] dataMetric = new int[5];
+    @VisibleForTesting
+    public double[] dataEnglish = new double[5];
+    @VisibleForTesting
+    public int[] dataMetric = new int[5];
     // Trigger List
     // Shorts (HighTemp):    0
     // Heavy Coat (LowTemp): 1
     // Rain Boots (Rain):    2
     // Snow Boots (Snow):    3
     // Umbrella (Percip):    4
-    private float[] dataTriggers = {80, 40, 1, 1, 60};
+    private double[] dataTriggers = {80, 40, 1, 1, 60};
     private TemperatureScale tempScale;
-    private MeasurementSystem dataSystem ;
+    private MeasurementSystem dataSystem;
+    public int itemsLength = items.length;
+    public int namesLength = names.length;
 
-    BuddyInfo() {
+    public BuddyInfo() {
         for (int i = 0; i < 5; i++) {
             dataEnglish[i] = 0;
             dataMetric[i] = 0;
@@ -54,124 +58,125 @@ public class BuddyInfo extends UserInfo {
 
     public void updateBuddy() {
         int feelsLikeE, feelsLikeM, rainM, snowM, precip;
-        float rainE, snowE;
+        double rainE, snowE;
 
-        for (int i = 0; i < userInfo.weatherList.size(); i++) {
-            feelsLikeE = userInfo.weatherList.get(i).getFeelsLikeE();
-            feelsLikeM = userInfo.weatherList.get(i).getFeelsLikeM();
-            rainE = userInfo.weatherList.get(i).getRainE();
-            rainM = userInfo.weatherList.get(i).getRainM();
-            snowE = userInfo.weatherList.get(i).getSnowE();
-            snowM = userInfo.weatherList.get(i).getSnowM();
-            precip = userInfo.weatherList.get(i).getPrecip();
+        for (int i = 0; i < userInfo.weather.weatherList.size(); i++) {
+            feelsLikeE = userInfo.weather.weatherList.get(i).getFeelsLikeE();
+            feelsLikeM = userInfo.weather.weatherList.get(i).getFeelsLikeM();
+            rainE = userInfo.weather.weatherList.get(i).getRainE();
+            rainM = userInfo.weather.weatherList.get(i).getRainM();
+            snowE = userInfo.weather.weatherList.get(i).getSnowE();
+            snowM = userInfo.weather.weatherList.get(i).getSnowM();
+            precip = userInfo.weather.weatherList.get(i).getPrecip();
 
 
-            //MARK: Updating FeelsLike English
+            // Updating FeelsLike English //
             if (feelsLikeE > (int) dataEnglish[0])
-                dataEnglish[0] = (float) feelsLikeE;
+                dataEnglish[0] = (double) feelsLikeE;
             else if (feelsLikeE < (int) dataEnglish[1])
-                dataEnglish[1] = (float) feelsLikeE;
+                dataEnglish[1] = (double) feelsLikeE;
 
-            //MARK: Updating FeelsLike Metric
+            // Updating FeelsLike Metric //
             if (feelsLikeM > dataMetric[0])
                 dataMetric[0] = feelsLikeM;
             else if (feelsLikeM < dataMetric[1])
                 dataMetric[1] = feelsLikeM;
 
-            //MARK: Updating Rain English
-            if (rainE > dataEnglish[2])
+            // Updating Rain English //
+            if (rainE != dataEnglish[2])
                 dataEnglish[2] = rainE;
 
-            //MARK: Updating Rain Metric
-            if (rainM > dataMetric[2])
+            // Updating Rain Metric //
+            if (rainM != dataMetric[2])
                 dataMetric[2] = rainM;
 
-            //MARK: Updating Snow English
-            if (snowE > dataEnglish[3])
+            // Updating Snow English //
+            if (snowE != dataEnglish[3])
                 dataEnglish[3] = snowE;
 
-            //MARK: Updating Snow Metric
-            if (snowM > dataMetric[3])
+            // Updating Snow Metric //
+            if (snowM != dataMetric[3])
                 dataMetric[3] = snowM;
 
-            //MARK: Updating Precipitation
-            if (precip > dataMetric[4]) {
+            // Updating Precipitation //
+            if (precip != dataMetric[4]) {
                 dataMetric[4] = precip;
-                dataEnglish[4] = (float) precip;
+                dataEnglish[4] = (double) precip;
             }
         }
-        checkAll();
+        checkAll(dataTriggers, dataEnglish);
     }
 
-    //MARK: Checking Data
-    public void checkAll() {
-        float[] dataTriggerSet = dataTriggers;
-        float[] dataSet = dataEnglish;
+    // Checking Data //
+    public void checkAll(double[] dataTriggers, double[] dataSet) {
 
-        checkTemp();
+        checkTemp(dataTriggers, dataSet);
 
         for (int i = 2; i < 5; i++) {
-            if (dataTriggerSet[i] <= dataSet[i]) {
+            if (dataTriggers[i] <= dataSet[i]) {
                 items[i + 1] = true;
             }
+            else
+                items[i + 1] = false;
         }
     }
 
-    private void checkTemp() {
-        float[] dataTriggerSet = dataTriggers;
-        float[] dataSet = dataEnglish;
+    @VisibleForTesting
+    public void checkTemp(double[] dataTriggers, double[] dataSet) {
 
-        if (dataTriggerSet[0] <= dataSet[1]) {
+        if (dataTriggers[0] <= dataSet[1]) { // Shorts
             items[0] = true;
             items[1] = false;
             items[2] = false;
-        } else if (dataTriggerSet[1] >= dataSet[0]) {
+        } else if (dataTriggers[1] >= dataSet[0]) { // Heavy Coat
             items[0] = false;
             items[1] = false;
             items[2] = true;
-        } else if (dataTriggerSet[0] > dataSet[0] &&
-                dataTriggerSet[1] < dataSet[1]) {
+        } else if (dataTriggers[0] > dataSet[0] // Light Coat
+                && dataTriggers[1] < dataSet[1]) {
             items[0] = false;
             items[1] = true;
             items[2] = false;
-        } else if (dataTriggerSet[0] < dataSet[0]
-                && dataTriggerSet[1] < dataSet[1]) {
+        } else if (dataTriggers[0] < dataSet[0] // Light Coat and Shorts
+                && dataTriggers[0] > dataSet[1]) {
             items[0] = true;
             items[1] = true;
             items[2] = false;
-        } else if (dataTriggerSet[0] > dataSet[0]
-                && dataTriggerSet[1] > dataSet[1]) {
+        } else if (dataTriggers[1] < dataSet[0] // Light AND Heavy Coat (Layer)
+                && dataTriggers[1] > dataSet[1]) {
             items[0] = false;
             items[1] = true;
             items[2] = true;
         } else {
             items[0] = false;
             items[1] = false;
-            items[1] = false;
+            items[2] = false;
             items[6] = true;
         }
     }
 
-    //MARK: Return the data from the buddy
-    public float[] getData() {
-        float[] dataSet = new float[5];
+    // Gets //
+
+    // Return the data from the buddy //
+    public double[] getData() {
+        double[] dataSet = new double[5];
         if (dataSystem == MeasurementSystem.IMPERIAL) {
             dataSet = dataEnglish;
             switch (tempScale) {
                 case CELSIUS:
-                    dataSet[0] = (float) dataMetric[0];
-                    dataSet[1] = (float) dataMetric[1];
+                    dataSet[0] = (double) dataMetric[0];
+                    dataSet[1] = (double) dataMetric[1];
                     break;
                 case KELVIN:
-                    dataSet[0] = (float) (dataMetric[0] + 273.15);
-                    dataSet[1] = (float) (dataMetric[1] + 273.15);
+                    dataSet[0] = (double) (dataMetric[0] + 273.15);
+                    dataSet[1] = (double) (dataMetric[1] + 273.15);
                     break;
                 default:
             }
             return dataSet;
         } else {
             for (int i = 0; i < 5; i++) {
-                dataSet[i] = (float) dataMetric[i];
+                dataSet[i] = (double) dataMetric[i];
             }
             switch (tempScale) {
                 case FAHRENHEIT:
@@ -188,15 +193,31 @@ public class BuddyInfo extends UserInfo {
         }
     }
     public boolean getItem(int i){
-        return items[i];
+        if (i >= items.length)
+            return items[items.length-1];
+        else
+            return items[i];
     }
     public String getName(int i){
-        return names[i];
+        if (i >= names.length)
+            return names[names.length-1];
+        else
+            return names[i];
+    }
+
+    public TemperatureScale getTempScale(){
+        return tempScale;
+    }
+
+    public MeasurementSystem getDataSystem() {
+        return dataSystem;
     }
 
     public void updateInfo(){
         userInfo.updateData(context);
     }
+
+    // Sets //
 
     public void setTempScale(int input){
         switch (input){
@@ -222,6 +243,46 @@ public class BuddyInfo extends UserInfo {
             dataSystem = MeasurementSystem.METRIC;
         else
             System.out.println("Error Setting Data System");
+    }
+
+    public void setDataTriggers(int i, double trigger){
+        dataTriggers[i] = trigger;
+    }
+
+    public void setDataTriggers(double[] triggers){
+        if (triggers.length == dataTriggers.length)
+            dataTriggers = triggers;
+        else
+            System.out.println("Error - new trigger set length mismatch");
+    }
+
+    public void setDataEnglish(int i, double data){
+        dataEnglish[i] = data;
+    }
+
+    public void setDataEnglish(double[] data){
+        dataEnglish = data;
+    }
+
+    public void setDataMetric(int i, int data){
+        dataMetric[i] = data;
+    }
+
+    public void setDataMetric(int[] data){
+        dataMetric = data;
+    }
+
+    @VisibleForTesting
+    public void setWeatherList(int hour, int location, double[] weatherE, int[] weatherM){
+        userInfo.weather.weatherList.add(new WeatherInfo().new WeatherData(hour, location,
+                    (int) weatherE[0], weatherM[0],
+                        weatherE[1], weatherM[1],
+                        weatherE[2], weatherM[2], weatherM[3]));
+    }
+
+    @VisibleForTesting
+    public void clearWeatherList(){
+        userInfo.weather.weatherList.clear();
     }
 }
 

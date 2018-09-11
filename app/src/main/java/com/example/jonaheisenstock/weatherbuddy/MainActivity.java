@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
+import com.example.jonaheisenstock.weatherbuddy.DataClasses.BuddyInfo;
 
 public class MainActivity extends AppCompatActivity {
     BuddyInfo buddy = new BuddyInfo();
