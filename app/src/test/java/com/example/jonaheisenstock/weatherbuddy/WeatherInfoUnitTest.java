@@ -1,6 +1,7 @@
 package com.example.jonaheisenstock.weatherbuddy;
 
 import android.content.Context;
+import android.location.Location;
 
 import com.example.jonaheisenstock.weatherbuddy.DataClasses.*;
 
@@ -8,7 +9,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 
 public class WeatherInfoUnitTest {
@@ -16,68 +16,66 @@ public class WeatherInfoUnitTest {
     WeatherInfo weatherInfo = new WeatherInfo();
 
     @Test
-    public void testWeatherParser(){
+    public void testWeatherParser() throws Exception {}
 
-    }
+    //TODO: Figure out if a testSetWeatherList is needed at all
+//    @Test
+//    public void testSetWeatherList() throws Exception {
+//        final int[] START_TIMES = {};
+//        final int[] END_TIMES = {};
+//        final int[] LOCATIONS = {};
+//        final int[] HOURS = {};
+//
+//        ArrayList<WeatherInfo.WeatherData> expectedRawWeatherList = new ArrayList<>();
+//        ArrayList<WeatherInfo.WeatherData> expectedWeatherList = new ArrayList<>();
+//        ArrayList<LocationInfo.InstanceData> expectedInstanceList = new ArrayList<>();
+//
+//
+//        for (int i = 0; i < LOCATIONS.length; i++) {
+//            expectedInstanceList.add(new LocationInfo().new InstanceData(0,0,0,"10007"));
+//            expectedInstanceList.get(i).manualSetLocation(LOCATIONS[i]);
+//            weatherInfo.weatherList.clear();
+//            weatherInfo.rawWeatherList.clear();
+//            weatherInfo.rawWeatherList.addAll(expectedRawWeatherList);
+//        }
+//    }
 
     @Test
-    public void testSetWeatherList(){
+    public void testPickWeatherData() throws Exception {
+        ArrayList<WeatherInfo.WeatherData> expectedRawWeatherList = new ArrayList<>();
+        ArrayList<WeatherInfo.WeatherData> expectedWeatherList = new ArrayList<>();
+        final int[] HOURS = {2,4,1,4};
+        final int[] LOCATIONS = {1,1,0,0};
 
-    }
+        // Set Up weather lists //
+        expectedWeatherList.clear();
+        weatherInfo.weatherList.clear();
+        weatherInfo.rawWeatherList.clear();
 
-    @Test
-    public void testPickWeatherData(){
-        final int[] DEFAULT_HOURS = {0,1,2,3};
-        final int[] DEFAULT_LOCATIONS = {10007, 90210};
-        final int[][] DEFAULT_FEELSLIKE_ENGLISH = {{70,71,72,73},{80,81,82,83}};
-        final int[][] DEFAULT_FEELSLIKE_METRIC = {{10,11,12,13},{20,21,22,23}};
-        final double[][] DEFAULT_RAIN_ENGLISH = {{1.0,1.1,1.2,1.3},{2.0,2.1,2.2,2.3}};
-        final int[][] DEFAULT_RAIN_METRIC = {{10,11,12,13},{20,21,22,23}};
-        final double[][] DEFAULT_SNOW_ENGLISH = {{1.0,1.1,1.2,1.3},{2.0,2.1,2.2,2.3}};
-        final int[][] DEFAULT_SNOW_METRIC = {{10,11,12,13},{20,21,22,23}};
-        final int[][] DEFAULT_PRECIPITATION = {{10,11,12,13},{20,21,22,23}};
-
-        ArrayList<WeatherInfo.WeatherData> rawWeatherList = new ArrayList<>();
-
-        int endTime;    //t1
-        int startTime;  //t2
-        int location1 = DEFAULT_LOCATIONS[0];  //l1
-        int location2 = DEFAULT_LOCATIONS[1];  //l2
-
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 4; j++){
-                rawWeatherList.add(new WeatherInfo().new WeatherData(DEFAULT_HOURS[j],DEFAULT_LOCATIONS[i],
-                        DEFAULT_FEELSLIKE_ENGLISH[i][j],DEFAULT_FEELSLIKE_METRIC[i][j],
-                        DEFAULT_RAIN_ENGLISH[i][j],DEFAULT_RAIN_METRIC[i][j],
-                        DEFAULT_SNOW_ENGLISH[i][j],DEFAULT_SNOW_METRIC[i][j],DEFAULT_PRECIPITATION[i][j]));
-            }
+        for(int i = 0; i < 4; i++){
+            expectedRawWeatherList.add(new WeatherInfo().new WeatherData(HOURS[i],LOCATIONS[i],
+                    i,i,i,i,i,i,i));
         }
 
-        for (int i = 0; i < 10; i++){
-            switch(i) {
-                case 0: //Should return nil
-                    startTime = -2;
-                    break;
-                case 1: //Test for true, then break part 1, then 2, then 3?
-                    //CASE TRUE
-                    endTime = 3;
-                    startTime = 3;
-//t1 - 1 >= weather.getHour() && weather.getHour() <= t2
-// && weather.getLocation() == l1
-                case 2:
-//t1 <= weather.getHour() && weather.getHour() <= t2 + 1
-// && weather.getLocation() == l2
-            }
-        }
+        weatherInfo.rawWeatherList.addAll(expectedRawWeatherList);
+
+        // Testing
+        weatherInfo.pickWeatherData(1,2,0,1);
+
+        expectedWeatherList.add(expectedRawWeatherList.get(2));
+        expectedWeatherList.add(expectedRawWeatherList.get(0));
+        expectedRawWeatherList.remove(2);
+        expectedRawWeatherList.remove(0);
+
+        Assert.assertEquals("Removal Error", expectedRawWeatherList, weatherInfo.rawWeatherList);
+        Assert.assertEquals("Addition Error", expectedWeatherList, weatherInfo.weatherList);
     }
 
     @Test
-    public void testLoadJSONfromAsset(){
-
-    }
+    public void testLoadJSONfromAsset() throws Exception {}
 
     @Test
-    public void testWeatherDataSetsAndGets(){
+    public void testWeatherDataSetsAndGets() throws Exception {
         final int DEFAULT_HOUR = 0;
         final int DEFAULT_LOCATION = 10007;
         final double[] DEFAULT_WEATHER_ENGLISH = {70, 0.5, 0.5, 40};
@@ -115,11 +113,5 @@ public class WeatherInfoUnitTest {
         Assert.assertEquals(DEFAULT_WEATHER_METRIC[2]+1,weatherData.getSnowM());
         Assert.assertEquals(DEFAULT_WEATHER_METRIC[3]+1,weatherData.getPrecip());
 
-    }
-
-    private ArrayList setupWeatherArrayList(){
-        ArrayList<WeatherInfo.WeatherData> list = new ArrayList<>();
-
-        return list;
     }
 }

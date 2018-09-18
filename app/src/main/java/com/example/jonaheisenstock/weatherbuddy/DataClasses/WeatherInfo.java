@@ -10,13 +10,14 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.Iterator;
 
 @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
 public class WeatherInfo extends MergeSort {
 
     //TODO: Convert from zipcode to coordinates
     //TODO: Write an autoreset 1x a day so that the high doesn't keep climbing and the low doesn't keep dropping
+    //TODO: Add NON calendar functionality (GPS & manual entry)
 
     //Array Lists
 
@@ -31,15 +32,20 @@ public class WeatherInfo extends MergeSort {
     ArrayList<Integer> precipitation = new ArrayList<>();
 
     // Lists of Weather Classes
-    ArrayList<WeatherData> rawWeatherList = new ArrayList<>();
-    ArrayList<WeatherData> weatherList = new ArrayList<>();
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    public ArrayList<WeatherData> rawWeatherList = new ArrayList<>();
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    public ArrayList<WeatherData> weatherList = new ArrayList<>();
 
     // Gets weather info from WUnderground for weatherList
     public void weatherParser(LocationInfo locationInfo, Context context) {
-        for (int i = 0; i < locationInfo.locationList.size(); i++) {
+        Iterator<Integer> locationIterator =  locationInfo.getLocationSet().iterator();
+        int tempLocation;
+        while(locationIterator.hasNext()) {
+            tempLocation = locationIterator.next();
             try {
                 // get JSONObject from JSON file
-                JSONObject obj = new JSONObject(loadJSONfromAsset(locationInfo.locationList.get(i), context.getApplicationContext()));
+                JSONObject obj = new JSONObject(loadJSONfromAsset(tempLocation, context.getApplicationContext()));
 
                 // fetch JSONArray
                 JSONArray weatherArray = obj.getJSONArray("hourly_forecast");
@@ -48,7 +54,7 @@ public class WeatherInfo extends MergeSort {
 
                 for (int j = 0; j < weatherArray.length(); j++) {
                     // create a JSONObject for fetching single user weatherList
-                    JSONObject weatherDetail = weatherArray.getJSONObject(i);
+                    JSONObject weatherDetail = weatherArray.getJSONObject(tempLocation);
                     // Getting hours
                     JSONObject weatherTime = weatherDetail.getJSONObject("FCTTIME");
                     hour = Integer.parseInt(weatherTime.getString("hour"));
@@ -75,7 +81,7 @@ public class WeatherInfo extends MergeSort {
                 e.printStackTrace();
             }
             for (int j = 0; j < hours.size(); j++) {
-                rawWeatherList.add(new WeatherData(hours, locationInfo.locationList.get(i),
+                rawWeatherList.add(new WeatherData(hours, tempLocation,
                         feelsLikeEnglish, feelsLikeMetric,
                         rainEnglish, rainMetric,
                         snowEnglish, snowMetric,
@@ -84,41 +90,52 @@ public class WeatherInfo extends MergeSort {
         }
     }
 
-    private void setWeatherList(LocationInfo locationInfo) {
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    public void setWeatherList(ArrayList<LocationInfo.InstanceData> locationInstanceList) {
         int time1, time2, loc1, loc2;
-        if (locationInfo.eventList.size() > 1)
-            mergeSortEvents(locationInfo.eventList,0,locationInfo.eventList.size());
+        if (locationInstanceList.size() > 2) {
+            mergeSortInstances(locationInstanceList, 0, locationInstanceList.size());
 
-        if (rawWeatherList.size() > 1)
-            mergeSortWeather(rawWeatherList, 0, rawWeatherList.size());
+            if (rawWeatherList.size() > 1)
+                mergeSortWeather(rawWeatherList, 0, rawWeatherList.size());
 
-        for (int i = 0; i < locationInfo.eventList.size() - 2; i++) {
-            time1 = locationInfo.eventList.get(i).getEndTime();
-            loc1 = locationInfo.eventList.get(i).getLocation();
-            time2 = locationInfo.eventList.get(i + 1).getStartTime();
-            loc2 = locationInfo.eventList.get(i + 1).getLocation();
-            pickWeatherData(time1, time2, loc1, loc2);
+            for (int i = 0; i <= locationInstanceList.size() - 2; i++) {
+                time1 = locationInstanceList.get(i).getEndTime();
+                loc1 = locationInstanceList.get(i).getLocation();
+                time2 = locationInstanceList.get(i + 1).getStartTime();
+                loc2 = locationInstanceList.get(i + 1).getLocation();
+                pickWeatherData(time1, time2, loc1, loc2);
+            }
         }
+        else if (locationInstanceList.size() > 1) {
+            pickWeatherData(locationInstanceList.get(0).getStartTime(),locationInstanceList.get(0).getEndTime(),
+                    locationInstanceList.get(0).getLocation(), locationInstanceList.get(0).getLocation());
+        }
+        else {
+            weatherList.addAll(rawWeatherList);
+            rawWeatherList.clear();
+        }
+        mergeSortWeather(weatherList, 0, weatherList.size());
     }
 
     // Gets weather data from rawWeatherList to add to weather list for setWeatherList
-    private void pickWeatherData(int t1, int t2, int l1, int l2) {
-        for (WeatherData weather : rawWeatherList)
-            if (weather.getHour() > t2 + 1) {
-                break;
-            }
-            else {
-                if (t1 - 1 >= weather.getHour() && weather.getHour() <= t2
-                        && weather.getLocation() == l1) {
-                    weatherList.add(weather);
-                    rawWeatherList.remove(weather);
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    public void pickWeatherData(int t1, int t2, int l1, int l2) {
+        for (int i = rawWeatherList.size() - 1; i > -1; i--) {
+            if (rawWeatherList.get(i).getHour() >= t1 - 1 &&
+                    rawWeatherList.get(i).getHour() <= t2 + 1) {
+                if (rawWeatherList.get(i).getHour() <= t2
+                        && rawWeatherList.get(i).getLocation() == l1) {
+                    weatherList.add(rawWeatherList.get(i));
+                    rawWeatherList.remove(i);
                 }
-                else if (t1 <= weather.getHour() && weather.getHour() <= t2 + 1
-                        && weather.getLocation() == l2) {
-                    weatherList.add(weather);
-                    rawWeatherList.remove(weather);
+                else if (t1 <= rawWeatherList.get(i).getHour() &&
+                        rawWeatherList.get(i).getLocation() == l2) {
+                    weatherList.add(rawWeatherList.get(i));
+                    rawWeatherList.remove(i);
                 }
             }
+        }
     }
 
     private String loadJSONfromAsset(int location, Context context) {
@@ -131,7 +148,8 @@ public class WeatherInfo extends MergeSort {
             in.read(buffer);
             in.close();
             json = new String(buffer, "UTF-8");
-        } catch (IOException ex) {
+        }
+        catch (IOException ex) {
             ex.printStackTrace();
             return null;
         }
@@ -233,4 +251,5 @@ public class WeatherInfo extends MergeSort {
         }
 
     }
+
 }

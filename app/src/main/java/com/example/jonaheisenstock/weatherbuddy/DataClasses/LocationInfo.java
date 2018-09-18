@@ -14,15 +14,16 @@ import android.support.v4.app.ActivityCompat;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Locale;
 
 @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
 public class LocationInfo {
     // Lists of Calendar or Event Classes
-    ArrayList<calendarData> calendarList = new ArrayList<>();
-    ArrayList<eventData> eventList = new ArrayList<>();
-    ArrayList<Integer> locationList = new ArrayList<>();
-    int defaultLocation = 10017;
+    private ArrayList<calendarData> calendarList = new ArrayList<>();
+    private ArrayList<InstanceData> instanceList = new ArrayList<>();
+    private HashSet<Integer> locationSet = new HashSet<>();
+    private int defaultLocation = 10017;
 
     // Calendar Info List to Get
     private static final String[] CALENDAR_PROJECTION = new String[]{
@@ -37,23 +38,21 @@ public class LocationInfo {
     private static final int CALENDAR_PROJECTION_COLOR_INDEX = 2;
 
     // Event Info List to Get
-    private static final String[] EVENT_PROJECTION = new String[]{
-            CalendarContract.Events.CALENDAR_ID,                // 0
-            CalendarContract.Events.DTSTART,                    // 1
-            CalendarContract.Events.DTEND,                      // 2
-            CalendarContract.Events.DURATION,                   // 3
-            CalendarContract.Events.EVENT_LOCATION,             // 4
+    private static final String[] INSTANCE_PROJECTION = new String[]{
+            CalendarContract.Instances.CALENDAR_ID,             // 0
+            CalendarContract.Instances.START_MINUTE,            // 1
+            CalendarContract.Instances.END_MINUTE,              // 2
+            CalendarContract.Instances.EVENT_LOCATION,          // 3
     };
 
     // The indices for the projection array above.
-    private static final int EVENT_PROJECTION_CALENDAR_ID_INDEX = 0;
-    private static final int EVENT_PROJECTION_DTSTART_INDEX = 1;
-    private static final int EVENT_PROJECTION_DTEND_INDEX = 2;
-    private static final int EVENT_PROJECTION_DURATION_INDEX = 3;
-    private static final int EVENT_PROJECTION_EVENT_LOCATION_INDEX = 4;
+    private static final int INSTANCE_PROJECTION_CALENDAR_ID_INDEX = 0;
+    private static final int INSTANCE_PROJECTION_START_MINUTE_INDEX = 1;
+    private static final int INSTANCE_PROJECTION_END_MINUTE_INDEX = 2;
+    private static final int INSTANCE_PROJECTION_EVENT_LOCATION_INDEX = 3;
 
 
-    // Gets calendar and event info for eventList
+    // Gets calendar and event info for instanceList
     public void calendarParser(Context context) {
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_GRANTED) {
             Date now = new Date();
@@ -63,6 +62,8 @@ public class LocationInfo {
             String calSelection = "((" + CalendarContract.Calendars.VISIBLE + " = ?))";
             String[] calSelectionArgs = new String[]{"1"};
             calCursor = calCr.query(uri, CALENDAR_PROJECTION, calSelection, calSelectionArgs, null);
+
+            // Pulling calendars
             while (calCursor.moveToLast()) {
                 long calID = 0;
                 String calDisplayName = null;
@@ -74,86 +75,64 @@ public class LocationInfo {
 
                 calendarList.add(new calendarData(calID, calDisplayName, calColor));
 
-                Uri eventUri = CalendarContract.Events.CONTENT_URI;
-                Cursor eventCursor = null;
-                ContentResolver eventCr = context.getContentResolver();
-                String eventSelection = "((" + CalendarContract.Events.DTSTART + " >= ?) AND ("
-                        + CalendarContract.Events.DTSTART + " <= ?) AND ("
-                        + CalendarContract.Events.SELF_ATTENDEE_STATUS + " != ?))"; //TODO: Add user ability to choose if their unreplied events show up too
-                String[] eventSelectionArgs = new String[]{now.getTime()
+                Uri instanceUri = CalendarContract.Instances.CONTENT_URI;
+                Cursor instanceCursor = null;
+                ContentResolver instanceCr = context.getContentResolver();
+                String instanceSelection = "((" + CalendarContract.Instances.START_MINUTE  + " >= ?) AND ("
+                        + CalendarContract.Instances.START_MINUTE + " <= ?) AND ("
+                        + CalendarContract.Instances.CALENDAR_ID + " == ?))"; //TODO: Add user ability to choose if their unreplied events show up too
+                String[] instanceSelectionArgs = new String[]{now.getTime()
                         + ", " + tomorrowDate(now)
-                        + ", 2"};
-                eventCursor = eventCr.query(eventUri, EVENT_PROJECTION, eventSelection, eventSelectionArgs, null);
+                        + ", " + calID};
+                instanceCursor = instanceCr.query(instanceUri, INSTANCE_PROJECTION, instanceSelection, instanceSelectionArgs, null);
 
-                while (eventCursor.moveToLast()) {
-                    long eventCalID = 0;
-                    long eventStart = 0;
-                    long eventEnd = 0;
-                    String eventDuration = null;
-                    String eventLocation = null;
+                //TODO: Only search visible calendars?
+                while (instanceCursor.moveToLast()) {
+                    long instanceCalID = 0;
+                    int instanceStart = 0;
+                    int instanceEnd = 0;
+                    String instanceLocation = null;
 
-                    eventCalID = eventCursor.getLong(EVENT_PROJECTION_CALENDAR_ID_INDEX);
-                    eventStart = eventCursor.getLong(EVENT_PROJECTION_DTSTART_INDEX);
-                    eventEnd = eventCursor.getLong(EVENT_PROJECTION_DTEND_INDEX);
-                    eventDuration = eventCursor.getString(EVENT_PROJECTION_DURATION_INDEX);
-                    eventLocation = eventCursor.getString(EVENT_PROJECTION_EVENT_LOCATION_INDEX);
 
-                    eventList.add(new eventData(eventCalID, eventStart, eventEnd, eventDuration, eventLocation));
+                    instanceCalID = instanceCursor.getLong(INSTANCE_PROJECTION_CALENDAR_ID_INDEX);
+                    instanceStart = instanceCursor.getInt(INSTANCE_PROJECTION_START_MINUTE_INDEX);
+                    instanceEnd = instanceCursor.getInt(INSTANCE_PROJECTION_END_MINUTE_INDEX);
+                    instanceLocation = instanceCursor.getString(INSTANCE_PROJECTION_EVENT_LOCATION_INDEX);
+
+                    instanceList.add(new InstanceData(instanceCalID, instanceStart, instanceEnd, instanceLocation));
                 }
             }
             Geocoder geocoder = new Geocoder(context.getApplicationContext(), Locale.getDefault());
-            for (eventData event :
-                    eventList) {
+            for (InstanceData instance : instanceList) {
                 if (geocoder.isPresent()) {
                     try {
-                        event.convertFromString(geocoder);
-                    } catch (IOException e) {
-
+                        instance.convertFromString(geocoder);
+                        locationSet.add(instance.location);
                     }
+                    catch (IOException e) {}
                 }
             }
-            updateLocationList();
-        } else {
-            locationList.add(defaultLocation);
+        }
+        else {
+            locationSet.add(defaultLocation);
         }
     }
 
-    long tomorrowDate(Date tomorrow) {
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    public long tomorrowDate(Date tomorrow) {
         int dHours;
         if (tomorrow.getHours() > 6) {
             dHours = tomorrow.getHours() - 6;
             tomorrow.setTime(tomorrow.getTime() + 86400000 - (dHours * 3600000));
-        } else
+        }
+        else
             tomorrow.setTime(tomorrow.getTime() + 86400000);
         return tomorrow.getTime();
     }
 
-    private void updateLocationList() {
-        boolean found;
-        for (eventData e : eventList) {
-            found = false;
-            for (int i = 0; i < locationList.size(); i++) {
-                if (locationList.get(i) == e.getLocation())
-                    found = true;
-            }
-            if (!found) {
-                locationList.add(e.getLocation());
-            }
-        }
-    }
-
-    // MergeSort Methods //
-    protected static void eventBubbleSort(ArrayList<eventData> array) {
-        for (int i = (array.size() - 1); i >= 0; i--) {
-            for (int j = 1; j <= i; j++) {
-                if (array.get(j - 1).getStartTime() > array.get(j).getStartTime()) {
-                    eventData tempI = array.get(i);
-                    eventData tempJ = array.get(j);
-                    array.set(i, tempJ);
-                    array.set(j, tempI);
-                }
-            }
-        }
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    public HashSet<Integer> getLocationSet(){
+        return locationSet;
     }
 
     // Data Classes //
@@ -170,36 +149,38 @@ public class LocationInfo {
         }
     }
 
-    protected class eventData {
-        private long id;
+    @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
+    public class InstanceData {
+        private long calId;
         private int startTime, endTime, location;
         private String tempLocation;
 
-        eventData(long id, long start, long end, String duration, String location) {
-            this.id = id;                                   // Set Up id
+
+        @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
+        public InstanceData(long calId, int startMinutes, int endMinutes, String location) {
+            // Set Up id
+            this.calId = calId;
             tempLocation = location;
 
-            Date dateStart = new Date(start * 1000);       // Set Up startTime
-            startTime = dateStart.getHours();
+            // Set Up startTime
+            startTime = Math.round(startMinutes/60);
 
-            if (duration == null) {                          // Set Up endTime
-                Date dateEnd = new Date(end * 1000);
-                endTime = dateEnd.getHours();
-            } else {
-                //TODO: Implement RFC2445 to Int
-                endTime = 0;
-            }
+            // Set Up endTime
+            endTime = Math.round(endMinutes/60);
         }
 
-        protected int getStartTime() {
+        @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
+        public int getStartTime() {
             return startTime;
         }
 
-        protected int getEndTime() {
+        @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
+        public int getEndTime() {
             return endTime;
         }
 
-        protected int getLocation() {
+        @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
+        public int getLocation() {
             return location;
         }
 
@@ -209,6 +190,11 @@ public class LocationInfo {
             } catch (IllegalArgumentException e) {
                 location = defaultLocation;
             }
+        }
+
+        @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+        public void manualSetLocation(int location){
+            this.location = location;
         }
     }
 

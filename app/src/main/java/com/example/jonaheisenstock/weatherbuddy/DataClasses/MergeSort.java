@@ -44,14 +44,14 @@ public class MergeSort {
         }
     }
 
-    private void mergeEvents(ArrayList<LocationInfo.eventData> array, int l, int m, int r) {
+    private void mergeInstances(ArrayList<LocationInfo.InstanceData> array, int l, int m, int r) {
         int i, j, k;
         int n1 = m - l + 1;
         int n2 =  r - m;
 
         // Temp Arrays
-        ArrayList<LocationInfo.eventData> L = new ArrayList<>();
-        ArrayList<LocationInfo.eventData> R = new ArrayList<>();
+        ArrayList<LocationInfo.InstanceData> L = new ArrayList<>();
+        ArrayList<LocationInfo.InstanceData> R = new ArrayList<>();
 
         // Copy Data
         L.addAll(array.subList(l,n1));
@@ -93,12 +93,12 @@ public class MergeSort {
         }
     }
 
-    public void mergeSortEvents(ArrayList<LocationInfo.eventData> array, int l, int r) {
+    public void mergeSortInstances(ArrayList<LocationInfo.InstanceData> array, int l, int r) {
         if (l < r) {
             int m = l + (r - l)/2;
 
-            mergeSortEvents(array, l, m); mergeSortEvents(array, m+1, r);
-            mergeEvents(array, l, m, r);
+            mergeSortInstances(array, l, m); mergeSortInstances(array, m+1, r);
+            mergeInstances(array, l, m, r);
         }
     }
 }
