@@ -1,16 +1,20 @@
 package com.example.jonaheisenstock.weatherbuddy.DataClasses;
 
+import android.Manifest;
 import android.content.Context;
 import android.support.annotation.VisibleForTesting;
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.JsonObjectRequest;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
 
 @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
 public class WeatherInfo extends MergeSort {
@@ -19,78 +23,92 @@ public class WeatherInfo extends MergeSort {
     //TODO: Write an autoreset 1x a day so that the high doesn't keep climbing and the low doesn't keep dropping
     //TODO: Add NON calendar functionality (GPS & manual entry)
 
-    //Array Lists
-
     //For JSON Data
-    ArrayList<Integer> hours = new ArrayList<>();
-    ArrayList<Integer> feelsLikeEnglish = new ArrayList<>();
-    ArrayList<Integer> feelsLikeMetric = new ArrayList<>();
-    ArrayList<Float> rainEnglish = new ArrayList<>();
-    ArrayList<Integer> rainMetric = new ArrayList<>();
-    ArrayList<Float> snowEnglish = new ArrayList<>();
-    ArrayList<Integer> snowMetric = new ArrayList<>();
-    ArrayList<Integer> precipitation = new ArrayList<>();
+    @VisibleForTesting
+    public LinkedList<String> jsonData = new LinkedList<>();
+    final String URL_BASE = "http://api.wunderground.com/api/fb2d4e978c2c2a11/hourly/q/";
+    RequestQueue jsonQueue;
 
     // Lists of Weather Classes
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    public ArrayList<WeatherData> rawWeatherList = new ArrayList<>();
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    public ArrayList<WeatherData> weatherList = new ArrayList<>();
+    @VisibleForTesting public ArrayList<WeatherData> rawWeatherList = new ArrayList<>();
+    @VisibleForTesting public ArrayList<WeatherData> weatherList = new ArrayList<>();
+    @VisibleForTesting public boolean flag = false;
 
     // Gets weather info from WUnderground for weatherList
-    public void weatherParser(LocationInfo locationInfo, Context context) {
-        Iterator<Integer> locationIterator =  locationInfo.getLocationSet().iterator();
-        int tempLocation;
-        while(locationIterator.hasNext()) {
-            tempLocation = locationIterator.next();
-            try {
+    // Calls getJson (which calls parseJson)
+    // Adds unsorted jsonData to rawData, which sorts it
+    public void weatherParser(LocationInfo locationInfo, PermissionCheck permissionCheck, Context context) {
+        if (permissionCheck.check(context, Manifest.permission.INTERNET)) {
+            Iterator<Integer> locationIterator = locationInfo.getLocationSet().iterator();
+            int tempLocation;
+            String url;
+
+            while (locationIterator.hasNext()) {
+                tempLocation = locationIterator.next();
+                url = URL_BASE + String.valueOf(tempLocation) + ".json";
+
                 // get JSONObject from JSON file
-                JSONObject obj = new JSONObject(loadJSONfromAsset(tempLocation, context.getApplicationContext()));
+                getJson(url);
 
-                // fetch JSONArray
-                JSONArray weatherArray = obj.getJSONArray("hourly_forecast");
-
-                int hour;
-
-                for (int j = 0; j < weatherArray.length(); j++) {
-                    // create a JSONObject for fetching single user weatherList
-                    JSONObject weatherDetail = weatherArray.getJSONObject(tempLocation);
-                    // Getting hours
-                    JSONObject weatherTime = weatherDetail.getJSONObject("FCTTIME");
-                    hour = Integer.parseInt(weatherTime.getString("hour"));
-//                if (hour == calendar.endTime) {
-                    hours.add(hour);
-                    // Getting FeelsLike
-                    JSONObject feelsLike = weatherDetail.getJSONObject("feelslike");
-                    feelsLikeEnglish.add(Integer.parseInt(feelsLike.getString("english")));
-                    feelsLikeMetric.add(Integer.parseInt(feelsLike.getString("metric")));
-                    // Getting rain
-                    JSONObject rain = weatherDetail.getJSONObject("qpf");
-                    rainEnglish.add(Float.parseFloat(rain.getString("english")));
-                    rainMetric.add(Integer.parseInt(rain.getString("metric")));
-                    // Getting snow
-                    JSONObject snow = weatherDetail.getJSONObject("snow");
-                    snowEnglish.add(Float.parseFloat(snow.getString("english")));
-                    snowMetric.add(Integer.parseInt(snow.getString("metric")));
-                    // Getting precipitation
-                    precipitation.add(Integer.parseInt(weatherDetail.getString("pop")));
-//                }
+                // Add all info to rawWeatherList
+                while (!jsonData.isEmpty()) {
+                    rawWeatherList.add(new WeatherData(jsonData, tempLocation));
+                    flag = true;
                 }
+            }
+        } else {
+            //TODO: Add something where user's internet access is requested again
+        }
+    }
+
+    // Get the JSON from the url and convert to a JSONArray
+    @VisibleForTesting
+    public void getJson(String url){
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
+                response -> {
+                    try {
+                        parseJson(response.getJSONArray("hourly_forecast"));
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }, error -> error.printStackTrace());
+        jsonQueue.add(request);
+    }
+
+    // Parse JSON and dump relevant data into a LinkedList
+    @VisibleForTesting
+    public void parseJson(JSONArray weatherArray) {
+        // Parse Weather
+        for (int i = 0; i < weatherArray.length(); i++) {
+            try {
+                JSONObject weatherDetail = weatherArray.getJSONObject(i);
+
+                // Getting hours
+                JSONObject weatherTime = weatherDetail.getJSONObject("FCTTIME");
+                jsonData.add(weatherTime.getString("hour"));
+                // Getting FeelsLike
+                JSONObject feelsLike = weatherDetail.getJSONObject("feelslike");
+                jsonData.add(feelsLike.getString("english"));
+                jsonData.add(feelsLike.getString("metric"));
+                // Getting rain
+                JSONObject rain = weatherDetail.getJSONObject("qpf");
+                jsonData.add(rain.getString("english"));
+                jsonData.add(rain.getString("metric"));
+                // Getting snow
+                JSONObject snow = weatherDetail.getJSONObject("snow");
+                jsonData.add(snow.getString("english"));
+                jsonData.add(snow.getString("metric"));
+                // Getting precipitation
+                jsonData.add(weatherDetail.getString("pop"));
             }
             catch (JSONException e) {
                 e.printStackTrace();
             }
-            for (int j = 0; j < hours.size(); j++) {
-                rawWeatherList.add(new WeatherData(hours, tempLocation,
-                        feelsLikeEnglish, feelsLikeMetric,
-                        rainEnglish, rainMetric,
-                        snowEnglish, snowMetric,
-                        precipitation));
-            }
         }
     }
 
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    //
+    @VisibleForTesting
     public void setWeatherList(ArrayList<LocationInfo.InstanceData> locationInstanceList) {
         int time1, time2, loc1, loc2;
         if (locationInstanceList.size() > 2) {
@@ -119,7 +137,7 @@ public class WeatherInfo extends MergeSort {
     }
 
     // Gets weather data from rawWeatherList to add to weather list for setWeatherList
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    @VisibleForTesting
     public void pickWeatherData(int t1, int t2, int l1, int l2) {
         for (int i = rawWeatherList.size() - 1; i > -1; i--) {
             if (rawWeatherList.get(i).getHour() >= t1 - 1 &&
@@ -138,49 +156,28 @@ public class WeatherInfo extends MergeSort {
         }
     }
 
-    private String loadJSONfromAsset(int location, Context context) {
-        String url = "http://api.wunderground.com/api/fb2d4e978c2c2a11/hourly/q/" + location + ".json";
-        String json = null;
-        try {
-            InputStream in = context.getAssets().open(url);
-            int size = in.available();
-            byte[] buffer = new byte[size];
-            in.read(buffer);
-            in.close();
-            json = new String(buffer, "UTF-8");
-        }
-        catch (IOException ex) {
-            ex.printStackTrace();
-            return null;
-        }
-        return json;
-    }
-
     // Data Classes //
     //TODO: Find a way to avoid making sets & gets public
     @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
     public class WeatherData {
-        private int hour, feelsLikeE, feelsLikeM, rainM, snowM, precip, location;
-        private double rainE, snowE;
+        private int hour, feelsLikeM, rainM, snowM, precip, location;
+        private double feelsLikeE, rainE, snowE;
 
-        WeatherData(ArrayList h, int location,
-                    ArrayList fE, ArrayList fM,
-                    ArrayList rE, ArrayList rM,
-                    ArrayList sE, ArrayList sM,
-                    ArrayList p) {
-            setHour(Integer.parseInt((String) h.remove(0)));
-            setFeelsLikeE(Integer.parseInt((String) fE.remove(0)));
-            setFeelsLikeM(Integer.parseInt((String) fM.remove(0)));
-            setRainE(Float.parseFloat((String) rE.remove(0)));
-            setRainM(Integer.parseInt((String) rM.remove(0)));
-            setSnowE(Float.parseFloat((String) sE.remove(0)));
-            setSnowM(Integer.parseInt((String) sM.remove(0)));
-            setPrecip(Integer.parseInt((String) p.remove(0)));
+        @VisibleForTesting
+        public WeatherData(LinkedList<String> json, int location) {
+            setHour(Integer.parseInt(json.remove()));
+            setFeelsLikeE(Double.parseDouble(json.remove()));
+            setFeelsLikeM(Integer.parseInt(json.remove()));
+            setRainE(Double.parseDouble(json.remove()));
+            setRainM(Integer.parseInt(json.remove()));
+            setSnowE(Double.parseDouble(json.remove()));
+            setSnowM(Integer.parseInt(json.remove()));
+            setPrecip(Integer.parseInt(json.remove()));
             this.location = location;
         }
         @VisibleForTesting
         public WeatherData(int hour, int location,
-                    int feelsLikeE, int feelsLikeM,
+                    double feelsLikeE, int feelsLikeM,
                     double rainE, int rainM,
                     double snowE, int snowM, int precip){
             this.hour = hour;
@@ -198,8 +195,7 @@ public class WeatherInfo extends MergeSort {
         public void setHour(int hour) {
             this.hour = hour;
         }
-        //TODO: FeelsLikeE defaults to int. Why?
-        public void setFeelsLikeE(int feelsLikeE) {
+        public void setFeelsLikeE(double feelsLikeE) {
             this.feelsLikeE = feelsLikeE;
         }
         public void setFeelsLikeM(int feelsLikeM) {
@@ -224,11 +220,10 @@ public class WeatherInfo extends MergeSort {
         public int getHour() {
             return hour;
         }
-
         public int getLocation() {
             return location;
         }
-        public int getFeelsLikeE() {
+        public double getFeelsLikeE() {
             return feelsLikeE;
         }
         public int getFeelsLikeM() {

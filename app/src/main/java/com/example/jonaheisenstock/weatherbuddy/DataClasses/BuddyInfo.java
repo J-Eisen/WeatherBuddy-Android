@@ -57,8 +57,8 @@ public class BuddyInfo {
     }
 
     public void updateBuddy() {
-        int feelsLikeE, feelsLikeM, rainM, snowM, precip;
-        double rainE, snowE;
+        int feelsLikeM, rainM, snowM, precip;
+        double feelsLikeE, rainE, snowE;
 
         for (int i = 0; i < userInfo.weather.weatherList.size(); i++) {
             feelsLikeE = userInfo.weather.weatherList.get(i).getFeelsLikeE();

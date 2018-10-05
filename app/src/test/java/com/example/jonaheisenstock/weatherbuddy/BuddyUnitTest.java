@@ -9,6 +9,7 @@ import java.util.ArrayList;
 
 import static org.junit.Assert.*;
 
+//TODO: Switch to Mockito tests
 public class BuddyUnitTest {
     BuddyInfo buddy = new BuddyInfo();
 

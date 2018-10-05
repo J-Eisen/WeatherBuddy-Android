@@ -1,117 +1,1 @@
-package com.example.jonaheisenstock.weatherbuddy;
-
-import android.content.Context;
-import android.location.Location;
-
-import com.example.jonaheisenstock.weatherbuddy.DataClasses.*;
-
-import org.junit.Assert;
-import org.junit.Test;
-
-import java.util.ArrayList;
-
-
-public class WeatherInfoUnitTest {
-
-    WeatherInfo weatherInfo = new WeatherInfo();
-
-    @Test
-    public void testWeatherParser() throws Exception {}
-
-    //TODO: Figure out if a testSetWeatherList is needed at all
-//    @Test
-//    public void testSetWeatherList() throws Exception {
-//        final int[] START_TIMES = {};
-//        final int[] END_TIMES = {};
-//        final int[] LOCATIONS = {};
-//        final int[] HOURS = {};
-//
-//        ArrayList<WeatherInfo.WeatherData> expectedRawWeatherList = new ArrayList<>();
-//        ArrayList<WeatherInfo.WeatherData> expectedWeatherList = new ArrayList<>();
-//        ArrayList<LocationInfo.InstanceData> expectedInstanceList = new ArrayList<>();
-//
-//
-//        for (int i = 0; i < LOCATIONS.length; i++) {
-//            expectedInstanceList.add(new LocationInfo().new InstanceData(0,0,0,"10007"));
-//            expectedInstanceList.get(i).manualSetLocation(LOCATIONS[i]);
-//            weatherInfo.weatherList.clear();
-//            weatherInfo.rawWeatherList.clear();
-//            weatherInfo.rawWeatherList.addAll(expectedRawWeatherList);
-//        }
-//    }
-
-    @Test
-    public void testPickWeatherData() throws Exception {
-        ArrayList<WeatherInfo.WeatherData> expectedRawWeatherList = new ArrayList<>();
-        ArrayList<WeatherInfo.WeatherData> expectedWeatherList = new ArrayList<>();
-        final int[] HOURS = {2,4,1,4};
-        final int[] LOCATIONS = {1,1,0,0};
-
-        // Set Up weather lists //
-        expectedWeatherList.clear();
-        weatherInfo.weatherList.clear();
-        weatherInfo.rawWeatherList.clear();
-
-        for(int i = 0; i < 4; i++){
-            expectedRawWeatherList.add(new WeatherInfo().new WeatherData(HOURS[i],LOCATIONS[i],
-                    i,i,i,i,i,i,i));
-        }
-
-        weatherInfo.rawWeatherList.addAll(expectedRawWeatherList);
-
-        // Testing
-        weatherInfo.pickWeatherData(1,2,0,1);
-
-        expectedWeatherList.add(expectedRawWeatherList.get(2));
-        expectedWeatherList.add(expectedRawWeatherList.get(0));
-        expectedRawWeatherList.remove(2);
-        expectedRawWeatherList.remove(0);
-
-        Assert.assertEquals("Removal Error", expectedRawWeatherList, weatherInfo.rawWeatherList);
-        Assert.assertEquals("Addition Error", expectedWeatherList, weatherInfo.weatherList);
-    }
-
-    @Test
-    public void testLoadJSONfromAsset() throws Exception {}
-
-    @Test
-    public void testWeatherDataSetsAndGets() throws Exception {
-        final int DEFAULT_HOUR = 0;
-        final int DEFAULT_LOCATION = 10007;
-        final double[] DEFAULT_WEATHER_ENGLISH = {70, 0.5, 0.5, 40};
-        final int[] DEFAULT_WEATHER_METRIC = {20, 1, 1, 40};
-        WeatherInfo.WeatherData weatherData = new WeatherInfo().new WeatherData(DEFAULT_HOUR, DEFAULT_LOCATION,
-                (int)DEFAULT_WEATHER_ENGLISH[0], DEFAULT_WEATHER_METRIC[0],
-                DEFAULT_WEATHER_ENGLISH[1], DEFAULT_WEATHER_METRIC[1],
-                DEFAULT_WEATHER_ENGLISH[2], DEFAULT_WEATHER_METRIC[2], DEFAULT_WEATHER_METRIC[3]);
-        //Testing Gets
-        Assert.assertEquals(DEFAULT_HOUR,weatherData.getHour());
-        Assert.assertEquals(DEFAULT_LOCATION,weatherData.getLocation());
-        Assert.assertEquals((int)DEFAULT_WEATHER_ENGLISH[0],weatherData.getFeelsLikeE(),0.1);
-        Assert.assertEquals(DEFAULT_WEATHER_ENGLISH[1],weatherData.getRainE(),0.1);
-        Assert.assertEquals(DEFAULT_WEATHER_ENGLISH[2],weatherData.getSnowE(),0.1);
-        Assert.assertEquals(DEFAULT_WEATHER_METRIC[0],weatherData.getFeelsLikeM());
-        Assert.assertEquals(DEFAULT_WEATHER_METRIC[1],weatherData.getRainM());
-        Assert.assertEquals(DEFAULT_WEATHER_METRIC[2],weatherData.getSnowM());
-        Assert.assertEquals(DEFAULT_WEATHER_METRIC[3],weatherData.getPrecip());
-
-        //Testing Sets
-        weatherData.setHour(DEFAULT_HOUR+1);
-        weatherData.setFeelsLikeE((int)DEFAULT_WEATHER_ENGLISH[0]+1);
-        weatherData.setRainE(DEFAULT_WEATHER_ENGLISH[1]+1);
-        weatherData.setSnowE(DEFAULT_WEATHER_ENGLISH[2]+1);
-        weatherData.setFeelsLikeM(DEFAULT_WEATHER_METRIC[0]+1);
-        weatherData.setRainM(DEFAULT_WEATHER_METRIC[1]+1);
-        weatherData.setSnowM(DEFAULT_WEATHER_METRIC[2]+1);
-        weatherData.setPrecip(DEFAULT_WEATHER_METRIC[3]+1);
-        Assert.assertEquals(DEFAULT_HOUR+1,weatherData.getHour());
-        Assert.assertEquals((int)DEFAULT_WEATHER_ENGLISH[0]+1,weatherData.getFeelsLikeE(),0.1);
-        Assert.assertEquals(DEFAULT_WEATHER_ENGLISH[1]+1,weatherData.getRainE(),0.1);
-        Assert.assertEquals(DEFAULT_WEATHER_ENGLISH[2]+1,weatherData.getSnowE(),0.1);
-        Assert.assertEquals(DEFAULT_WEATHER_METRIC[0]+1,weatherData.getFeelsLikeM());
-        Assert.assertEquals(DEFAULT_WEATHER_METRIC[1]+1,weatherData.getRainM());
-        Assert.assertEquals(DEFAULT_WEATHER_METRIC[2]+1,weatherData.getSnowM());
-        Assert.assertEquals(DEFAULT_WEATHER_METRIC[3]+1,weatherData.getPrecip());
-
-    }
-}
+package com.example.jonaheisenstock.weatherbuddy;import android.Manifest;import android.test.mock.MockContext;import com.android.volley.Response;import com.android.volley.toolbox.JsonObjectRequest;import com.android.volley.toolbox.JsonRequest;import com.example.jonaheisenstock.weatherbuddy.DataClasses.*;import org.json.*;import org.junit.Before;import org.junit.Test;import org.junit.runner.RunWith;import org.mockito.InOrder;import org.mockito.Mock;import org.mockito.Mockito;import org.mockito.MockitoAnnotations;import org.mockito.Spy;import org.mockito.junit.MockitoJUnitRunner;import java.io.BufferedReader;import java.io.FileInputStream;import java.io.IOException;import java.io.InputStreamReader;import java.util.ArrayList;import java.util.Arrays;import java.util.HashSet;import java.util.LinkedList;import static org.junit.Assert.*;import static org.mockito.Mockito.*;@RunWith(MockitoJUnitRunner.class)public class WeatherInfoUnitTest {    //TODO: Convert from real weatherInfo to mocked (Next Version)    WeatherInfo weatherInfo = new WeatherInfo();    @Mock LocationInfo mLocationInfo;    @Mock WeatherInfo.WeatherData mWeatherData;    @Mock MockContext mockContext;    @Mock PermissionCheck mPermissionCheck;    @Mock LinkedList<String> mJsonDataLinkedList;    @Mock ArrayList<WeatherInfo.WeatherData> mWeatherDataArrayList;    @Spy WeatherInfo sWeatherInfo;    //TODO: Write this test    @Before    public void setupTestWeatherParser() {        MockitoAnnotations.initMocks(this);        // Set Up locationHashSet (HashSet)        HashSet<Integer> testLocationHashSet = new HashSet<Integer>();        testLocationHashSet.add(1);        testLocationHashSet.add(0);        // Set Up jsonData (LinkedList)        final String[] EXPECTED_JSON_DATA = {"15","80.1","27","0.0","0","1.0","1","0",                "16","80.1","26","0.5","0","2.0","2","3",                "17","78.6","25","10.0","10","0.0","0","4",};        // Mockito Whens/etc. //        // Mock Getting LocationHashSet        when(mLocationInfo.getLocationSet()).thenReturn(testLocationHashSet);        // Mocking getJson        // Skips the method and adds EXPECTED_JSON_DATA to jsonData        doAnswer((a) -> {            sWeatherInfo.jsonData.addAll(Arrays.asList(EXPECTED_JSON_DATA));            return null; }).when(sWeatherInfo).getJson(anyString());    }    @Test    public void testWeatherParser() throws Exception {        boolean permission = true;        InOrder inOrder = Mockito.inOrder(sWeatherInfo);        for (int i = 0; i < 2; i++) {            if (i > 0)                permission = false;            when(mPermissionCheck.check(mockContext, Manifest.permission.INTERNET)).thenReturn(permission);   // Pass 1 permissionCheck TRUE | 2nd Pass FALSE            sWeatherInfo.weatherParser(mLocationInfo, mPermissionCheck, mockContext);        }        // Pass 1 | Permission = TRUE        inOrder.verify(sWeatherInfo,times(1)).weatherParser(any(), any(), any());    // weatherParser call        inOrder.verify(sWeatherInfo,times(2)).getJson(anyString());                  // Outer loop cycled twice        assertEquals(6,sWeatherInfo.rawWeatherList.size());                                        // Inner loop cycled 6x (3/loop)        // Pass 2 | Permission = FALSE        inOrder.verify(sWeatherInfo,times(1)).weatherParser(any(), any(), any());   // weatherParser call        verify(mPermissionCheck,times(2)).check(any(),anyString());                 // Outer if statement passed twice        // Double checks no other interactions occurred        verifyNoMoreInteractions(sWeatherInfo);        verifyNoMoreInteractions(mPermissionCheck);        verifyNoMoreInteractions(mockContext);        verifyNoMoreInteractions(mWeatherDataArrayList);    }    @Test    public void testPickWeatherData() throws Exception {        ArrayList<WeatherInfo.WeatherData> expectedRawWeatherList = new ArrayList<>();        ArrayList<WeatherInfo.WeatherData> expectedWeatherList = new ArrayList<>();        final int[] HOURS = {2,4,1,4};        final int[] LOCATIONS = {1,1,0,0};        // Set Up weather lists //        expectedWeatherList.clear();        weatherInfo.weatherList.clear();        weatherInfo.rawWeatherList.clear();        for(int i = 0; i < 4; i++){            expectedRawWeatherList.add(new WeatherInfo().new WeatherData(HOURS[i],LOCATIONS[i],                    i,i,i,i,i,i,i));        }        weatherInfo.rawWeatherList.addAll(expectedRawWeatherList);        // Testing        weatherInfo.pickWeatherData(1,2,0,1);        expectedWeatherList.add(expectedRawWeatherList.get(2));        expectedWeatherList.add(expectedRawWeatherList.get(0));        expectedRawWeatherList.remove(2);        expectedRawWeatherList.remove(0);        assertEquals("Removal Error", expectedRawWeatherList, weatherInfo.rawWeatherList);        assertEquals("Addition Error", expectedWeatherList, weatherInfo.weatherList);    }    @Test    public void testParseJson() throws Exception {        final String JSON_PATH = "/Users/jonaheisenstock/Documents/Projects/Apps/WeatherBuddyAndroid/app/src/main/assets/TestJSON";        final String[] EXPECTED_VALUES = {"14","79.5","26","0.0","0","0.0","0","0",                "15","80.1","27","0.0","0","0.0","0","0",                "16","80.1","27","0.0","0","0.0","0","0",                "17","78.6","26","0.0","0","0.0","0","0",                "18","75.4","24","0.0","0","0.0","0","3",                "19","73.7","23","0.0","0","0.0","0","5",                "20","72.8","23","0.0","0","0.0","0","15",                "21","72.0","22","0.0","0","0.0","0","15",                "22","71.3","22","0.0","0","0.0","0","15",                "23","70.7","21","0.0","0","0.0","0","19",                "0","69.7","21","0.0","0","0.0","0","34",                "1","68.7","20","0.0","0","0.0","0","22",                "2","68.0","20","0.0","0","0.0","0","33",                "3","67.1","20","0.0","0","0.0","0","21",                "4","66.6","19","0.0","0","0.0","0","15",                "5","65.9","19","0.0","0","0.0","0","9",                "6","65.3","19","0.0","0","0.0","0","6",                "7","64.9","18","0.0","0","0.0","0","5",                "8","65.4","19","0.0","0","0.0","0","6",                "9","66.5","19","0.0","0","0.0","0","4",                "10","67.9","20","0.0","0","0.0","0","3",                "11","69.1","21","0.0","0","0.0","0","2",                "12","69.7","21","0.0","0","0.0","0","2",                "13","70.8","22","0.0","0","0.0","0","2",                "14","71.8","22","0.0","0","0.0","0","1",                "15","72.2","22","0.0","0","0.0","0","1",                "16","72.2","22","0.0","0","0.0","0","1",                "17","71.4","22","0.0","0","0.0","0","2",                "18","70.4","21","0.0","0","0.0","0","2",                "19","68.8","20","0.0","0","0.0","0","2",                "20","68.1","20","0.0","0","0.0","0","3",                "21","67.8","20","0.0","0","0.0","0","3",                "22","67.5","20","0.0","0","0.0","0","3",                "23","67.3","20","0.0","0","0.0","0","3",                "0","66.9","19","0.0","0","0.0","0","6",                "1","66.5","19","0.0","0","0.0","0","11"};        StringBuilder builder = new StringBuilder();        weatherInfo.jsonData.clear();        String jsonString = "";        try {            FileInputStream fileInputStream = new FileInputStream(JSON_PATH);            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(fileInputStream));            while (bufferedReader.ready()) {                builder.append(bufferedReader.readLine());            }            bufferedReader.close();            jsonString = builder.toString();        }        catch (IOException e) {            e.getStackTrace();        }        JSONObject testJsonObject = new JSONObject(jsonString);        JSONArray testJsonArray = testJsonObject.getJSONArray("hourly_forecast");        weatherInfo.parseJson(testJsonArray);        assertArrayEquals("Json array mismatch",EXPECTED_VALUES,weatherInfo.jsonData.toArray());    }    @Test    public void testJsonRequest() throws Exception {        // Catch-all test to find API-breaking changes.        assertNotNull(JsonRequest.class.getConstructor(String.class, String.class,                Response.Listener.class, Response.ErrorListener.class));        assertNotNull(JsonRequest.class.getConstructor(int.class, String.class, String.class,                Response.Listener.class, Response.ErrorListener.class));        assertNotNull(JsonObjectRequest.class.getConstructor(String.class, JSONObject.class,                Response.Listener.class, Response.ErrorListener.class));        assertNotNull(JsonObjectRequest.class.getConstructor(int.class, String.class,                JSONObject.class, Response.Listener.class, Response.ErrorListener.class));    }    @Test    public void testWeatherDataSetsAndGets() throws Exception {        final int DEFAULT_HOUR = 0;        final int DEFAULT_LOCATION = 10007;        final double[] DEFAULT_WEATHER_ENGLISH = {70, 0.5, 0.5, 40};        final int[] DEFAULT_WEATHER_METRIC = {20, 1, 1, 40};        WeatherInfo.WeatherData weatherData = new WeatherInfo().new WeatherData(DEFAULT_HOUR, DEFAULT_LOCATION,                (int)DEFAULT_WEATHER_ENGLISH[0], DEFAULT_WEATHER_METRIC[0],                DEFAULT_WEATHER_ENGLISH[1], DEFAULT_WEATHER_METRIC[1],                DEFAULT_WEATHER_ENGLISH[2], DEFAULT_WEATHER_METRIC[2], DEFAULT_WEATHER_METRIC[3]);        //Testing Gets        assertEquals(DEFAULT_HOUR,weatherData.getHour());        assertEquals(DEFAULT_LOCATION,weatherData.getLocation());        assertEquals((int)DEFAULT_WEATHER_ENGLISH[0],weatherData.getFeelsLikeE(),0.1);        assertEquals(DEFAULT_WEATHER_ENGLISH[1],weatherData.getRainE(),0.1);        assertEquals(DEFAULT_WEATHER_ENGLISH[2],weatherData.getSnowE(),0.1);        assertEquals(DEFAULT_WEATHER_METRIC[0],weatherData.getFeelsLikeM());        assertEquals(DEFAULT_WEATHER_METRIC[1],weatherData.getRainM());        assertEquals(DEFAULT_WEATHER_METRIC[2],weatherData.getSnowM());        assertEquals(DEFAULT_WEATHER_METRIC[3],weatherData.getPrecip());        //Testing Sets        weatherData.setHour(DEFAULT_HOUR+1);        weatherData.setFeelsLikeE((int)DEFAULT_WEATHER_ENGLISH[0]+1);        weatherData.setRainE(DEFAULT_WEATHER_ENGLISH[1]+1);        weatherData.setSnowE(DEFAULT_WEATHER_ENGLISH[2]+1);        weatherData.setFeelsLikeM(DEFAULT_WEATHER_METRIC[0]+1);        weatherData.setRainM(DEFAULT_WEATHER_METRIC[1]+1);        weatherData.setSnowM(DEFAULT_WEATHER_METRIC[2]+1);        weatherData.setPrecip(DEFAULT_WEATHER_METRIC[3]+1);        assertEquals(DEFAULT_HOUR+1,weatherData.getHour());        assertEquals((int)DEFAULT_WEATHER_ENGLISH[0]+1,weatherData.getFeelsLikeE(),0.1);        assertEquals(DEFAULT_WEATHER_ENGLISH[1]+1,weatherData.getRainE(),0.1);        assertEquals(DEFAULT_WEATHER_ENGLISH[2]+1,weatherData.getSnowE(),0.1);        assertEquals(DEFAULT_WEATHER_METRIC[0]+1,weatherData.getFeelsLikeM());        assertEquals(DEFAULT_WEATHER_METRIC[1]+1,weatherData.getRainM());        assertEquals(DEFAULT_WEATHER_METRIC[2]+1,weatherData.getSnowM());        assertEquals(DEFAULT_WEATHER_METRIC[3]+1,weatherData.getPrecip());    }    @Test    public void testWeatherDataInitializer() throws Exception {        LinkedList<String> listData = new LinkedList<>();        final String[] EXPECTED_DATA = {"0", "1.1", "1", "2.2", "2", "3.3", "3", "4", "12345"};        String[] actualData = new String[9];        listData.addAll(Arrays.asList(EXPECTED_DATA));        WeatherInfo.WeatherData testObject = new WeatherInfo().new WeatherData(listData, 12345);        actualData[0] = Integer.toString(testObject.getHour());        actualData[1] = Double.toString(testObject.getFeelsLikeE());        actualData[2] = Integer.toString(testObject.getFeelsLikeM());        actualData[3] = Double.toString(testObject.getRainE());        actualData[4] = Integer.toString(testObject.getRainM());        actualData[5] = Double.toString(testObject.getSnowE());        actualData[6] = Integer.toString(testObject.getSnowM());        actualData[7] = Integer.toString(testObject.getPrecip());        actualData[8] = Integer.toString(testObject.getLocation());        assertArrayEquals("WeatherData init error", EXPECTED_DATA, actualData);    }}

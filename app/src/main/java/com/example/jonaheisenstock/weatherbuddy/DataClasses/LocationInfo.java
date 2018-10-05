@@ -19,6 +19,10 @@ import java.util.Locale;
 
 @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
 public class LocationInfo {
+
+    // Permission Check Class setup
+    PermissionCheck permissionCheck = new PermissionCheck();
+
     // Lists of Calendar or Event Classes
     private ArrayList<calendarData> calendarList = new ArrayList<>();
     private ArrayList<InstanceData> instanceList = new ArrayList<>();
@@ -51,10 +55,9 @@ public class LocationInfo {
     private static final int INSTANCE_PROJECTION_END_MINUTE_INDEX = 2;
     private static final int INSTANCE_PROJECTION_EVENT_LOCATION_INDEX = 3;
 
-
     // Gets calendar and event info for instanceList
     public void calendarParser(Context context) {
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_GRANTED) {
+        if (permissionCheck.check(context, Manifest.permission.READ_CALENDAR)) {
             Date now = new Date();
             Cursor calCursor = null;
             ContentResolver calCr = context.getContentResolver();
@@ -78,15 +81,15 @@ public class LocationInfo {
                 Uri instanceUri = CalendarContract.Instances.CONTENT_URI;
                 Cursor instanceCursor = null;
                 ContentResolver instanceCr = context.getContentResolver();
+                //TODO: Add user ability to choose if their unreplied events show up too
                 String instanceSelection = "((" + CalendarContract.Instances.START_MINUTE  + " >= ?) AND ("
                         + CalendarContract.Instances.START_MINUTE + " <= ?) AND ("
-                        + CalendarContract.Instances.CALENDAR_ID + " == ?))"; //TODO: Add user ability to choose if their unreplied events show up too
+                        + CalendarContract.Instances.CALENDAR_ID + " == ?))";
                 String[] instanceSelectionArgs = new String[]{now.getTime()
                         + ", " + tomorrowDate(now)
                         + ", " + calID};
                 instanceCursor = instanceCr.query(instanceUri, INSTANCE_PROJECTION, instanceSelection, instanceSelectionArgs, null);
 
-                //TODO: Only search visible calendars?
                 while (instanceCursor.moveToLast()) {
                     long instanceCalID = 0;
                     int instanceStart = 0;
@@ -118,7 +121,7 @@ public class LocationInfo {
         }
     }
 
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    @VisibleForTesting
     public long tomorrowDate(Date tomorrow) {
         int dHours;
         if (tomorrow.getHours() > 6) {
@@ -130,7 +133,7 @@ public class LocationInfo {
         return tomorrow.getTime();
     }
 
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    @VisibleForTesting
     public HashSet<Integer> getLocationSet(){
         return locationSet;
     }
@@ -192,7 +195,7 @@ public class LocationInfo {
             }
         }
 
-        @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+        @VisibleForTesting
         public void manualSetLocation(int location){
             this.location = location;
         }

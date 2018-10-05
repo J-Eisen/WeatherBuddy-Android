@@ -17,12 +17,13 @@ class UserInfo {
 
     WeatherInfo weather = new WeatherInfo();
     LocationInfo location = new LocationInfo();
+    PermissionCheck permissionCheck = new PermissionCheck();
 
     Context context;
 
     public void updateData(Context context) {
         location.calendarParser(context.getApplicationContext());
-        weather.weatherParser(location, context.getApplicationContext());
+        weather.weatherParser(location, permissionCheck, context);
     }
 
     // Permissions Check // //TODO: Get permissions check to work
