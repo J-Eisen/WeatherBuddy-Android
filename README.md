@@ -16,8 +16,10 @@ Additionally, the main way that WeatherBuddy finds your location is not using GP
 * Graphics
   * Default window will be a simple representation of outfits
   * Various articles on the outfit will be able to be tapped for more info
+    
     (e.g. if you tap the buddy's sweatshirt, the temperature of 70˚ will appear)
 * Save States
   * User settings will be saved
   * Previous (up to 24 hours) weather data will be saved
+    
     This is to minimize its data use and maximize apparent speed
