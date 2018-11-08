@@ -8,7 +8,14 @@ Additionally, the main way that WeatherBuddy finds your location is not using GP
 * Partial Testing Suite
 * Can find the gaps in calendar data
 * Can output boolean results from weather data
-* User Settings
+* User Settings can be changed
+  * Sliders are used for temperature
+  * Sliders interact with each other as needed
+  
+  If maximum temperature slider drops below minimum temperature's current position, the minimum temperature will change as well.
+  * Changes persist and are passed back to all neccessary windows
+* Uses a Buddy singleton to keep basic weather data
+  * Buddy singleton only makes data accessable as needed
 ## Under Development
 * Full testing suite
   * JSON parsing test
